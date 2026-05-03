@@ -6,9 +6,9 @@ interface Props {
   episodeCount: number;
 }
 const { name, slug, coverImage, episodeCount } = Astro.props;
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
-<a href={`${base}podcasts/${slug}/`} class="podcast-card">
+<a href={`${base}/podcasts/${slug}/`} class="podcast-card">
   <div class="cover">
     {coverImage
       ? <img src={coverImage} alt={name} loading="lazy" />

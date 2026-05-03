@@ -15,7 +15,7 @@ const {
   durationSeconds, coverImage, oneLineSummary, marketSentiment,
 } = Astro.props;
 
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const date = new Date(publishedAt).toLocaleDateString("zh-TW", {
   year: "numeric", month: "2-digit", day: "2-digit",
 });
@@ -25,7 +25,7 @@ const sentimentColor: Record<string, string> = {
 };
 const color = sentimentColor[marketSentiment ?? ""] ?? "muted";
 ---
-<a href={`${base}episodes/${id}/`} class="episode-card">
+<a href={`${base}/episodes/${id}/`} class="episode-card">
   {coverImage && <img class="thumb" src={coverImage} alt={title} loading="lazy" />}
   <div class="body">
     <div class="meta">

@@ -10,7 +10,7 @@ export async function getStaticPaths() {
 
 const { id } = Astro.params;
 const ep = getEpisodeById(id);
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const date = ep
   ? new Date(ep.published_at).toLocaleDateString("zh-TW", {
@@ -25,7 +25,7 @@ const mins = ep ? Math.round(ep.duration_seconds / 60) : 0;
   ) : (
     <div class="episode">
       <div class="header">
-        <a href={`${base}podcasts/${ep.podcast_slug}/`} class="back">← {ep.podcast_name}</a>
+        <a href={`${base}/podcasts/${ep.podcast_slug}/`} class="back">← {ep.podcast_name}</a>
         <div class="episode-meta">
           {ep.cover_image && <img class="cover" src={ep.cover_image} alt={ep.title} />}
           <div>

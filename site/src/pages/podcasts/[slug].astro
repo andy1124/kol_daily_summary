@@ -11,11 +11,11 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 const episodes = getEpisodesByPodcast(slug);
 const podcast = episodes[0];
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 <Layout title={podcast?.podcast_name ?? slug}>
   <div class="header">
-    <a href={`${base}podcasts/`} class="back">← 所有節目</a>
+    <a href={`${base}/podcasts/`} class="back">← 所有節目</a>
     <div class="podcast-info">
       {podcast?.cover_image && (
         <img class="cover" src={podcast.cover_image} alt={podcast.podcast_name} />

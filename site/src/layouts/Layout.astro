@@ -4,7 +4,7 @@ interface Props {
   description?: string;
 }
 const { title, description = "每日財經 Podcast & KOL 重點彙整" } = Astro.props;
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 <!doctype html>
 <html lang="zh-TW">
@@ -82,10 +82,10 @@ const base = import.meta.env.BASE_URL;
   </head>
   <body>
     <nav>
-      <a href={base} class="logo">財經<span>精選</span></a>
+      <a href={`${base}/`} class="logo">財經<span>精選</span></a>
       <div class="links">
-        <a href={base}>每日精選</a>
-        <a href={`${base}podcasts/`}>Podcasts</a>
+        <a href={`${base}/`}>每日精選</a>
+        <a href={`${base}/podcasts/`}>Podcasts</a>
       </div>
     </nav>
     <main>
