@@ -1,73 +1,95 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import EpisodeCard from "../components/EpisodeCard.astro";
-import { getRecentEpisodes, getAllEpisodes } from "../lib/data";
+import FeaturedEpisodeCard from "../components/FeaturedEpisodeCard.astro";
+import { getLatestPerPodcast, getEpisodesGroupedByDate } from "../lib/data";
 
-const recent = getRecentEpisodes(48);
-const all = getAllEpisodes().slice(0, 20);
-const episodes = recent.length > 0 ? recent : all;
-const today = new Date().toLocaleDateString("zh-TW", {
-  year: "numeric", month: "long", day: "numeric", weekday: "long",
-});
+const latestPerPodcast = getLatestPerPodcast();
+const dateGroups = getEpisodesGroupedByDate();
 ---
-<Layout title="每日精選">
-  <div class="header">
-    <h1>每日財經精選</h1>
-    <p class="date">{today}</p>
-  </div>
-
-  {episodes.length === 0 ? (
+<Layout title="財經精選">
+  {latestPerPodcast.length === 0 ? (
     <div class="empty">
       <p>尚無資料。請先執行 <code>python scripts/run_all.py</code> 取得 Podcast 資料。</p>
     </div>
   ) : (
-    <div class="section">
-      <h2 class="section-title">
-        {recent.length > 0 ? "最近 48 小時更新" : "最新集數"}
-        <span class="count">{episodes.length}</span>
-      </h2>
-      <div class="episode-list">
-        {episodes.map((ep) => (
-          <EpisodeCard
-            id={ep.id}
-            podcastName={ep.podcast_name}
-            podcastSlug={ep.podcast_slug}
-            title={ep.title}
-            publishedAt={ep.published_at}
-            durationSeconds={ep.duration_seconds}
-            coverImage={ep.cover_image}
-            oneLineSummary={ep.summary?.one_line_summary}
-            marketSentiment={ep.summary?.market_sentiment}
-          />
-        ))}
-      </div>
-    </div>
+    <>
+      <section class="featured-section">
+        <h2 class="section-label">各節目最新一集</h2>
+        <div class="featured-list">
+          {latestPerPodcast.map((ep) => (
+            <FeaturedEpisodeCard episode={ep} />
+          ))}
+        </div>
+      </section>
+
+      {dateGroups.length > 0 && (
+        <section class="history-section">
+          {dateGroups.map((group) => (
+            <div class="date-group">
+              <h2 class="date-header">
+                <span class="date-label">{group.label}</span>
+                <span class="date-count">{group.episodes.length} 集</span>
+              </h2>
+              <div class="episode-list">
+                {group.episodes.map((ep) => (
+                  <EpisodeCard
+                    id={ep.id}
+                    podcastName={ep.podcast_name}
+                    podcastSlug={ep.podcast_slug}
+                    title={ep.title}
+                    publishedAt={ep.published_at}
+                    durationSeconds={ep.duration_seconds}
+                    coverImage={ep.cover_image}
+                    oneLineSummary={ep.summary?.one_line_summary}
+                    marketSentiment={ep.summary?.market_sentiment}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+    </>
   )}
 </Layout>
 
 <style>
-  .header { margin-bottom: 2.5rem; }
-  h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.04em; margin: 0 0 0.4rem; }
-  .date { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
-  .section-title {
-    font-size: 0.85rem;
+  .featured-section { margin-bottom: 3rem; }
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     color: var(--text-muted);
     margin: 0 0 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
   }
-  .count {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 0.1rem 0.5rem;
-    font-size: 0.75rem;
+  .featured-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .history-section { margin-top: 1rem; }
+  .date-group { margin-bottom: 2.25rem; }
+  .date-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+  .date-label {
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+  .date-count {
+    font-size: 0.78rem;
     color: var(--text-muted);
   }
-  .episode-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .episode-list { display: flex; flex-direction: column; gap: 0.65rem; }
   .empty {
     background: var(--surface);
     border: 1px solid var(--border);

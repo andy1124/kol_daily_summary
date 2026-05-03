@@ -96,3 +96,35 @@ export function getRecentEpisodes(withinHours = 48): Episode[] {
     (e) => new Date(e.published_at).getTime() > cutoff
   );
 }
+
+export function getLatestPerPodcast(): Episode[] {
+  const seen = new Set<string>();
+  return getAllEpisodes().filter((ep) => {
+    if (seen.has(ep.podcast_slug)) return false;
+    seen.add(ep.podcast_slug);
+    return true;
+  });
+}
+
+export interface DateGroup {
+  date: string;
+  label: string;
+  episodes: Episode[];
+}
+
+export function getEpisodesGroupedByDate(): DateGroup[] {
+  const episodes = getAllEpisodes();
+  const groups = new Map<string, Episode[]>();
+  for (const ep of episodes) {
+    const date = ep.published_at.slice(0, 10);
+    if (!groups.has(date)) groups.set(date, []);
+    groups.get(date)!.push(ep);
+  }
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, eps]) => {
+      const d = new Date(date + "T12:00:00Z");
+      const label = `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+      return { date, label, episodes: eps };
+    });
+}

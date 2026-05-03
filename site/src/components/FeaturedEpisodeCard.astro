@@ -1,0 +1,156 @@
+---
+import type { Episode } from "../lib/data";
+
+interface Props {
+  episode: Episode;
+}
+const { episode: ep } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const date = new Date(ep.published_at).toLocaleDateString("zh-TW", {
+  month: "numeric", day: "numeric",
+});
+const mins = Math.round(ep.duration_seconds / 60);
+const sentimentColor: Record<string, string> = {
+  "看多": "green", "看空": "red", "中性": "muted", "混合": "yellow",
+};
+const color = sentimentColor[ep.summary?.market_sentiment ?? ""] ?? "muted";
+const keyPoints = ep.summary?.key_points?.slice(0, 4) ?? [];
+---
+<a href={`${base}/episodes/${ep.id}/`} class="featured-card">
+  <div class="card-header">
+    {ep.cover_image && (
+      <img class="cover" src={ep.cover_image} alt={ep.podcast_name} loading="lazy" />
+    )}
+    <div class="header-info">
+      <div class="meta-row">
+        <span class="podcast-name">{ep.podcast_name}</span>
+        <span class="sep">·</span>
+        <span class="date">{date}</span>
+        {mins > 0 && <><span class="sep">·</span><span class="dur">{mins} 分鐘</span></>}
+        {ep.summary?.market_sentiment && (
+          <span class={`badge badge--${color}`}>{ep.summary.market_sentiment}</span>
+        )}
+      </div>
+      <div class="title">{ep.title}</div>
+      {ep.summary?.one_line_summary && (
+        <div class="one-line">{ep.summary.one_line_summary}</div>
+      )}
+    </div>
+  </div>
+
+  {keyPoints.length > 0 && (
+    <ul class="points">
+      {keyPoints.map((pt) => <li>{pt}</li>)}
+    </ul>
+  )}
+
+  {!ep.summary && <div class="no-summary">摘要尚未生成</div>}
+
+  <div class="read-more">查看完整摘要 →</div>
+</a>
+
+<style>
+  .featured-card {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.06);
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    text-decoration: none;
+    color: inherit;
+  }
+  .featured-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 6px 20px rgba(79,70,229,0.1);
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+  .card-header {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+  .cover {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .header-info { flex: 1; min-width: 0; }
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+  .podcast-name {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent2);
+  }
+  .sep, .date, .dur { font-size: 0.78rem; color: var(--text-muted); }
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+  }
+  .badge--green  { background: #dcfce7; color: var(--green); }
+  .badge--red    { background: #fee2e2; color: var(--red); }
+  .badge--yellow { background: #fef3c7; color: var(--yellow); }
+  .badge--muted  { background: var(--surface2); color: var(--text-muted); }
+  .title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.35;
+    margin-bottom: 0.3rem;
+  }
+  .one-line {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .points {
+    margin: 0 0 0.75rem;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--border);
+    padding-top: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .points li {
+    padding-left: 1.2rem;
+    position: relative;
+    font-size: 0.875rem;
+    color: var(--text);
+    line-height: 1.55;
+  }
+  .points li::before {
+    content: "·";
+    position: absolute;
+    left: 0.3rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .no-summary {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+  .read-more {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent2);
+    margin-top: 0.75rem;
+  }
+</style>
