@@ -1,0 +1,104 @@
+---
+interface Props {
+  id: string;
+  podcastName: string;
+  podcastSlug: string;
+  title: string;
+  publishedAt: string;
+  durationSeconds: number;
+  coverImage?: string;
+  oneLineSummary?: string;
+  marketSentiment?: string;
+}
+const {
+  id, podcastName, podcastSlug, title, publishedAt,
+  durationSeconds, coverImage, oneLineSummary, marketSentiment,
+} = Astro.props;
+
+const base = import.meta.env.BASE_URL;
+const date = new Date(publishedAt).toLocaleDateString("zh-TW", {
+  year: "numeric", month: "2-digit", day: "2-digit",
+});
+const mins = Math.round(durationSeconds / 60);
+const sentimentColor: Record<string, string> = {
+  "看多": "green", "看空": "red", "中性": "muted", "混合": "yellow",
+};
+const color = sentimentColor[marketSentiment ?? ""] ?? "muted";
+---
+<a href={`${base}episodes/${id}/`} class="episode-card">
+  {coverImage && <img class="thumb" src={coverImage} alt={title} loading="lazy" />}
+  <div class="body">
+    <div class="meta">
+      <span class="podcast">{podcastName}</span>
+      <span class="date">{date}</span>
+      {mins > 0 && <span class="dur">{mins} 分鐘</span>}
+      {marketSentiment && (
+        <span class={`sentiment sentiment--${color}`}>{marketSentiment}</span>
+      )}
+    </div>
+    <div class="title">{title}</div>
+    {oneLineSummary && <div class="summary">{oneLineSummary}</div>}
+  </div>
+</a>
+
+<style>
+  .episode-card {
+    display: flex;
+    gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    transition: border-color 0.15s;
+    text-decoration: none;
+    color: inherit;
+  }
+  .episode-card:hover {
+    border-color: var(--accent);
+    text-decoration: none;
+  }
+  .thumb {
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .body { flex: 1; min-width: 0; }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.75rem;
+    align-items: center;
+    margin-bottom: 0.35rem;
+  }
+  .podcast { font-size: 0.78rem; color: var(--accent2); font-weight: 600; }
+  .date, .dur { font-size: 0.78rem; color: var(--text-muted); }
+  .sentiment {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .sentiment--green { background: #14532d; color: var(--green); }
+  .sentiment--red   { background: #450a0a; color: var(--red); }
+  .sentiment--yellow{ background: #451a03; color: var(--yellow); }
+  .sentiment--muted { background: var(--surface2); color: var(--text-muted); }
+  .title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .summary {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>

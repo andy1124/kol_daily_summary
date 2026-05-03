@@ -1,0 +1,98 @@
+import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { join, resolve } from "node:path";
+
+export interface EpisodeSummary {
+  key_points: string[];
+  stocks_mentioned: string[];
+  market_sentiment: string;
+  one_line_summary: string;
+  generated_at: string;
+}
+
+export interface Episode {
+  id: string;
+  podcast_slug: string;
+  podcast_name: string;
+  title: string;
+  published_at: string;
+  duration_seconds: number;
+  audio_url: string;
+  cover_image: string;
+  show_notes: string;
+  transcript: string;
+  summary: EpisodeSummary | null;
+}
+
+export interface PodcastMeta {
+  slug: string;
+  name: string;
+  episodeCount: number;
+  latestEpisode?: Episode;
+  coverImage?: string;
+}
+
+const DATA_DIR = resolve(join(import.meta.dirname ?? "", "../../../data"));
+
+function readJson<T>(path: string): T | null {
+  try {
+    return JSON.parse(readFileSync(path, "utf-8")) as T;
+  } catch {
+    return null;
+  }
+}
+
+export function getAllEpisodes(): Episode[] {
+  const podcastsDir = join(DATA_DIR, "podcasts");
+  if (!existsSync(podcastsDir)) return [];
+
+  const episodes: Episode[] = [];
+  for (const slug of readdirSync(podcastsDir)) {
+    const slugDir = join(podcastsDir, slug);
+    for (const file of readdirSync(slugDir)) {
+      if (!file.endsWith(".json")) continue;
+      const ep = readJson<Episode>(join(slugDir, file));
+      if (ep) episodes.push(ep);
+    }
+  }
+  return episodes.sort(
+    (a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+  );
+}
+
+export function getEpisodeById(id: string): Episode | null {
+  const all = getAllEpisodes();
+  return all.find((e) => e.id === id) ?? null;
+}
+
+export function getPodcastList(): PodcastMeta[] {
+  const episodes = getAllEpisodes();
+  const map = new Map<string, PodcastMeta>();
+
+  for (const ep of episodes) {
+    if (!map.has(ep.podcast_slug)) {
+      map.set(ep.podcast_slug, {
+        slug: ep.podcast_slug,
+        name: ep.podcast_name,
+        episodeCount: 0,
+        coverImage: ep.cover_image || undefined,
+      });
+    }
+    const meta = map.get(ep.podcast_slug)!;
+    meta.episodeCount += 1;
+    if (!meta.latestEpisode) meta.latestEpisode = ep;
+    if (ep.cover_image && !meta.coverImage) meta.coverImage = ep.cover_image;
+  }
+
+  return Array.from(map.values());
+}
+
+export function getEpisodesByPodcast(slug: string): Episode[] {
+  return getAllEpisodes().filter((e) => e.podcast_slug === slug);
+}
+
+export function getRecentEpisodes(withinHours = 48): Episode[] {
+  const cutoff = Date.now() - withinHours * 60 * 60 * 1000;
+  return getAllEpisodes().filter(
+    (e) => new Date(e.published_at).getTime() > cutoff
+  );
+}

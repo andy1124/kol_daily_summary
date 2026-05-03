@@ -1,0 +1,24 @@
+podcasts:
+  - name: "財報狗 Podcast"
+    slug: "statementdog"
+    rss_url: "https://anchor.fm/s/1e9c8a08/podcast/rss"
+    language: "zh"
+
+  - name: "股癌"
+    slug: "gooaye"
+    rss_url: "https://anchor.fm/s/54f7bf8/podcast/rss"
+    language: "zh"
+
+  - name: "游庭皓的財經皓角"
+    slug: "yu-ting-hao"
+    rss_url: "https://anchor.fm/s/5a4e5f70/podcast/rss"
+    language: "zh"
+
+kols:
+  # FB 粉絲專頁：未來擴充
+  # - name: "Freddy Business & Research"
+  #   platform: facebook
+  #   page_id: ""
+  # - name: "上游洞見"
+  #   platform: facebook
+  #   page_id: ""

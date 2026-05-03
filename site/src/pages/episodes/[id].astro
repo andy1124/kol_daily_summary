@@ -1,0 +1,138 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import KeyPoints from "../../components/KeyPoints.astro";
+import { getAllEpisodes, getEpisodeById } from "../../lib/data";
+
+export async function getStaticPaths() {
+  const episodes = getAllEpisodes();
+  return episodes.map((ep) => ({ params: { id: ep.id } }));
+}
+
+const { id } = Astro.params;
+const ep = getEpisodeById(id);
+const base = import.meta.env.BASE_URL;
+
+const date = ep
+  ? new Date(ep.published_at).toLocaleDateString("zh-TW", {
+      year: "numeric", month: "long", day: "numeric",
+    })
+  : "";
+const mins = ep ? Math.round(ep.duration_seconds / 60) : 0;
+---
+<Layout title={ep?.title ?? "集數"}>
+  {!ep ? (
+    <p>找不到此集數。</p>
+  ) : (
+    <div class="episode">
+      <div class="header">
+        <a href={`${base}podcasts/${ep.podcast_slug}/`} class="back">← {ep.podcast_name}</a>
+        <div class="episode-meta">
+          {ep.cover_image && <img class="cover" src={ep.cover_image} alt={ep.title} />}
+          <div>
+            <h1>{ep.title}</h1>
+            <div class="meta-row">
+              <span>{date}</span>
+              {mins > 0 && <span>{mins} 分鐘</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {ep.summary ? (
+        <section class="section">
+          <h2 class="section-label">AI 重點摘要</h2>
+          <KeyPoints
+            keyPoints={ep.summary.key_points}
+            stocksMentioned={ep.summary.stocks_mentioned}
+            marketSentiment={ep.summary.market_sentiment}
+            oneLineSummary={ep.summary.one_line_summary}
+          />
+        </section>
+      ) : (
+        <div class="no-summary">摘要尚未生成。</div>
+      )}
+
+      {ep.show_notes && (
+        <section class="section">
+          <h2 class="section-label">節目描述</h2>
+          <div class="show-notes">{ep.show_notes}</div>
+        </section>
+      )}
+
+      {ep.transcript && (
+        <section class="section">
+          <h2 class="section-label">完整逐字稿</h2>
+          <details class="transcript-details">
+            <summary>展開逐字稿（{ep.transcript.length.toLocaleString()} 字）</summary>
+            <div class="transcript">{ep.transcript}</div>
+          </details>
+        </section>
+      )}
+    </div>
+  )}
+</Layout>
+
+<style>
+  .header { margin-bottom: 2rem; }
+  .back { font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 1rem; }
+  .back:hover { color: var(--text); }
+  .episode-meta { display: flex; gap: 1.25rem; align-items: flex-start; }
+  .cover { width: 96px; height: 96px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+  h1 { font-size: 1.5rem; margin: 0 0 0.5rem; line-height: 1.3; }
+  .meta-row {
+    display: flex;
+    gap: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  .section { margin-top: 2rem; }
+  .section-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 0.75rem;
+  }
+  .no-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+  .show-notes {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    line-height: 1.7;
+  }
+  .transcript-details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .transcript-details summary {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    user-select: none;
+    list-style: none;
+  }
+  .transcript-details summary:hover { color: var(--text); }
+  .transcript {
+    padding: 0 1.25rem 1.25rem;
+    font-size: 0.88rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+</style>

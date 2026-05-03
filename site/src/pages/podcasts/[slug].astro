@@ -1,0 +1,56 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import EpisodeCard from "../../components/EpisodeCard.astro";
+import { getPodcastList, getEpisodesByPodcast } from "../../lib/data";
+
+export async function getStaticPaths() {
+  const podcasts = getPodcastList();
+  return podcasts.map((p) => ({ params: { slug: p.slug } }));
+}
+
+const { slug } = Astro.params;
+const episodes = getEpisodesByPodcast(slug);
+const podcast = episodes[0];
+const base = import.meta.env.BASE_URL;
+---
+<Layout title={podcast?.podcast_name ?? slug}>
+  <div class="header">
+    <a href={`${base}podcasts/`} class="back">← 所有節目</a>
+    <div class="podcast-info">
+      {podcast?.cover_image && (
+        <img class="cover" src={podcast.cover_image} alt={podcast.podcast_name} />
+      )}
+      <div>
+        <h1>{podcast?.podcast_name ?? slug}</h1>
+        <p class="sub">{episodes.length} 集 · 點擊查看重點摘要</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="episode-list">
+    {episodes.map((ep) => (
+      <EpisodeCard
+        id={ep.id}
+        podcastName={ep.podcast_name}
+        podcastSlug={ep.podcast_slug}
+        title={ep.title}
+        publishedAt={ep.published_at}
+        durationSeconds={ep.duration_seconds}
+        coverImage={ep.cover_image}
+        oneLineSummary={ep.summary?.one_line_summary}
+        marketSentiment={ep.summary?.market_sentiment}
+      />
+    ))}
+  </div>
+</Layout>
+
+<style>
+  .header { margin-bottom: 2rem; }
+  .back { font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 1rem; }
+  .back:hover { color: var(--text); }
+  .podcast-info { display: flex; gap: 1.25rem; align-items: center; }
+  .cover { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; }
+  h1 { font-size: 1.6rem; margin: 0 0 0.25rem; }
+  .sub { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
+  .episode-list { display: flex; flex-direction: column; gap: 0.75rem; }
+</style>

@@ -1,0 +1,115 @@
+---
+interface Props {
+  keyPoints: string[];
+  stocksMentioned?: string[];
+  marketSentiment?: string;
+  oneLineSummary?: string;
+}
+const { keyPoints, stocksMentioned = [], marketSentiment, oneLineSummary } = Astro.props;
+const sentimentColor: Record<string, string> = {
+  "看多": "green", "看空": "red", "中性": "muted", "混合": "yellow",
+};
+const color = sentimentColor[marketSentiment ?? ""] ?? "muted";
+---
+<div class="key-points">
+  {oneLineSummary && (
+    <div class="one-line">
+      {marketSentiment && (
+        <span class={`badge badge--${color}`}>{marketSentiment}</span>
+      )}
+      {oneLineSummary}
+    </div>
+  )}
+
+  <h3 class="section-title">核心觀點</h3>
+  <ul class="points">
+    {keyPoints.map((pt) => <li>{pt}</li>)}
+  </ul>
+
+  {stocksMentioned.length > 0 && (
+    <div class="stocks">
+      <span class="stocks-label">提及標的</span>
+      {stocksMentioned.map((s) => <span class="stock-tag">{s}</span>)}
+    </div>
+  )}
+</div>
+
+<style>
+  .key-points {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .one-line {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge--green  { background: #14532d; color: var(--green); }
+  .badge--red    { background: #450a0a; color: var(--red); }
+  .badge--yellow { background: #451a03; color: var(--yellow); }
+  .badge--muted  { background: var(--surface2); color: var(--text-muted); }
+  .section-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 0.75rem;
+  }
+  .points {
+    margin: 0 0 1.25rem;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .points li {
+    padding-left: 1.25rem;
+    position: relative;
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  .points li::before {
+    content: "·";
+    position: absolute;
+    left: 0.25rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .stocks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .stocks-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-right: 0.25rem;
+  }
+  .stock-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.8rem;
+    color: var(--text);
+    font-family: monospace;
+  }
+</style>

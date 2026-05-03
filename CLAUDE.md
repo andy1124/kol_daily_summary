@@ -1,0 +1,118 @@
+# KOL Daily Summary
+
+每日自動追蹤財經 Podcast 新集數，使用本地 Whisper 轉逐字稿，Claude API 生成重點摘要，發布為 GitHub Pages。
+
+## 專案架構
+
+```
+kol_daily_summary/
+├── config/sources.yaml      # Podcast / KOL 來源清單（唯一需要手動維護的設定檔）
+├── data/
+│   ├── processed.json       # 已處理集數 ID 記錄
+│   └── podcasts/[slug]/     # 每集 JSON（元數據 + 逐字稿 + 摘要）
+├── scripts/
+│   ├── run_all.py           # 主要執行入口
+│   ├── check_podcasts.py    # RSS 新集數檢查
+│   ├── transcribe.py        # Whisper 音訊轉錄
+│   └── summarize.py         # Claude API 摘要
+├── site/                    # Astro 靜態網站
+└── venv/                    # Python 虛擬環境
+```
+
+## 初次設定
+
+1. 複製環境變數設定：
+   ```powershell
+   Copy-Item .env.example .env
+   # 編輯 .env 填入 ANTHROPIC_API_KEY
+   ```
+
+2. 在 `config/sources.yaml` 填入 RSS URL（參考下方說明）
+
+3. 安裝 Node 相依：
+   ```powershell
+   cd site && npm install
+   ```
+
+## 每日執行流程
+
+```powershell
+# 啟動虛擬環境
+venv\Scripts\Activate.ps1
+
+# 執行 RSS 檢查 → 轉錄 → 摘要（每次最多 5 集）
+python scripts/run_all.py --max-episodes 5
+
+# 重新建置靜態網站
+cd site && npm run build && cd ..
+
+# 推送資料到 GitHub（GitHub Pages 自動更新）
+git add data/ && git commit -m "Daily update: $(Get-Date -Format 'yyyy-MM-dd')" && git push
+```
+
+### 只查看待處理項目（不實際執行）
+
+```powershell
+python scripts/run_all.py --dry-run
+```
+
+### 跳過轉錄（只更新摘要）
+
+```powershell
+python scripts/run_all.py --skip-transcribe
+```
+
+## 新增 Podcast 來源
+
+編輯 `config/sources.yaml`：
+
+```yaml
+podcasts:
+  - name: "節目中文名稱"
+    slug: "url-friendly-name"   # 英文，用於 URL 路徑，例如 my-podcast
+    rss_url: "https://..."
+    language: "zh"
+```
+
+### 如何找到 RSS URL
+
+1. 前往節目的 Apple Podcasts 頁面，通常可在原始碼或第三方工具找到 RSS
+2. 使用 [Podcast Index](https://podcastindex.org/) 搜尋節目名稱
+3. 許多台灣 Podcast 使用 Firstory：`https://open.firstory.me/rss/user/[id]`
+4. Anchor/Spotify 格式：`https://anchor.fm/s/[id]/podcast/rss`
+
+## 更新 Astro 網站設定
+
+編輯 `site/astro.config.mjs`，將 `site` 和 `base` 改為你的 GitHub Pages URL：
+
+```js
+export default defineConfig({
+  site: "https://YOUR_USERNAME.github.io",
+  base: "/YOUR_REPO_NAME",
+});
+```
+
+## GitHub Pages 部署設定
+
+1. 在 GitHub repo Settings → Pages → Source 選擇 `Deploy from a branch`
+2. Branch 選 `main`，資料夾選 `/site/dist`（或先用 `gh-pages` branch）
+3. 每次推送 `site/dist/` 後自動更新
+
+> 注意：`site/dist/` 預設在 `.gitignore` 中，需要另外設定 GitHub Actions 或移除忽略。
+> 建議做法：使用 `peaceiris/actions-gh-pages` action 或改用 `docs/` 作為發布目錄。
+
+## 未來擴充：FB KOL
+
+當需要新增 Facebook 粉絲專頁追蹤時：
+
+1. 在 `config/sources.yaml` 的 `kols` 區段新增來源
+2. 實作 `scripts/check_kols.py`（使用 Facebook Graph API 或 Playwright）
+3. 在 `scripts/run_all.py` 加入 KOL 處理步驟
+4. 在 Astro 網站新增 `/kols/` 頁面
+
+## 技術說明
+
+- **轉錄模型**：Whisper `medium`（中文辨識準確度約 90-95%）
+- **摘要模型**：Claude Haiku（低成本，使用 prompt caching 節省 token）
+- **前端**：Astro 4.x 靜態網站，深色主題
+- **資料格式**：每集一個 JSON 檔，含元數據、逐字稿、摘要

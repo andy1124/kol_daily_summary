@@ -1,0 +1,86 @@
+---
+import Layout from "../layouts/Layout.astro";
+import EpisodeCard from "../components/EpisodeCard.astro";
+import { getRecentEpisodes, getAllEpisodes } from "../lib/data";
+
+const recent = getRecentEpisodes(48);
+const all = getAllEpisodes().slice(0, 20);
+const episodes = recent.length > 0 ? recent : all;
+const today = new Date().toLocaleDateString("zh-TW", {
+  year: "numeric", month: "long", day: "numeric", weekday: "long",
+});
+---
+<Layout title="每日精選">
+  <div class="header">
+    <h1>每日財經精選</h1>
+    <p class="date">{today}</p>
+  </div>
+
+  {episodes.length === 0 ? (
+    <div class="empty">
+      <p>尚無資料。請先執行 <code>python scripts/run_all.py</code> 取得 Podcast 資料。</p>
+    </div>
+  ) : (
+    <div class="section">
+      <h2 class="section-title">
+        {recent.length > 0 ? "最近 48 小時更新" : "最新集數"}
+        <span class="count">{episodes.length}</span>
+      </h2>
+      <div class="episode-list">
+        {episodes.map((ep) => (
+          <EpisodeCard
+            id={ep.id}
+            podcastName={ep.podcast_name}
+            podcastSlug={ep.podcast_slug}
+            title={ep.title}
+            publishedAt={ep.published_at}
+            durationSeconds={ep.duration_seconds}
+            coverImage={ep.cover_image}
+            oneLineSummary={ep.summary?.one_line_summary}
+            marketSentiment={ep.summary?.market_sentiment}
+          />
+        ))}
+      </div>
+    </div>
+  )}
+</Layout>
+
+<style>
+  .header { margin-bottom: 2rem; }
+  h1 { font-size: 1.8rem; margin: 0 0 0.25rem; }
+  .date { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
+  .section-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .count {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .episode-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .empty {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3rem;
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .empty code {
+    background: var(--surface2);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    color: var(--accent2);
+  }
+</style>
