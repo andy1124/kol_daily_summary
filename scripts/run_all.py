@@ -1,7 +1,6 @@
-"""Orchestrator: RSS check → Whisper transcribe → Claude summarize → mark processed."""
+"""Orchestrator: RSS check → Whisper transcribe → mark processed."""
 import argparse
 import json
-import subprocess
 import sys
 from pathlib import Path
 
@@ -27,11 +26,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="只顯示待處理項目，不實際執行")
     parser.add_argument("--max-episodes", type=int, default=5, help="每次最多處理集數（0=不限）")
     parser.add_argument("--skip-transcribe", action="store_true", help="跳過 Whisper 轉錄")
-    parser.add_argument("--skip-summarize", action="store_true", help="跳過 Claude 摘要")
     args = parser.parse_args()
-
-    dry_flag = ["--dry-run"] if args.dry_run else []
-    python = sys.executable
 
     print("=" * 50)
     print("Step 1: 檢查 RSS 新集數")
@@ -52,17 +47,9 @@ def main():
         n = transcribe_all(dry_run=args.dry_run)
         print(f"轉錄 {n} 個集數\n")
 
-    if not args.skip_summarize:
-        print("=" * 50)
-        print("Step 3: Claude 摘要")
-        print("=" * 50)
-        from scripts.summarize import summarize_all
-        n = summarize_all(dry_run=args.dry_run)
-        print(f"摘要 {n} 個集數\n")
-
     if not args.dry_run:
         print("=" * 50)
-        print("Step 4: 更新已處理記錄")
+        print("Step 3: 更新已處理記錄")
         print("=" * 50)
         processed = load_processed()
         for ep in new_episodes:
@@ -74,6 +61,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # Allow running as `python scripts/run_all.py` from project root
     sys.path.insert(0, str(ROOT))
     main()
