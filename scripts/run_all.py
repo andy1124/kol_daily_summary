@@ -43,9 +43,12 @@ def main():
         print("=" * 50)
         print("Step 2: Whisper 音訊轉錄")
         print("=" * 50)
-        from scripts.transcribe import transcribe_all
-        n = transcribe_all(dry_run=args.dry_run)
-        print(f"轉錄 {n} 個集數\n")
+        if args.dry_run:
+            print("  [dry-run] 跳過 Whisper 載入")
+        else:
+            from scripts.transcribe import transcribe_all
+            n = transcribe_all()
+            print(f"轉錄 {n} 個集數\n")
 
     if not args.dry_run:
         print("=" * 50)

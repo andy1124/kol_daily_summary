@@ -5,6 +5,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+import torch
 import requests
 import whisper
 
@@ -13,14 +14,15 @@ DATA_DIR = ROOT / "data"
 TMP_DIR = ROOT / "tmp" / "audio"
 TMP_DIR.mkdir(parents=True, exist_ok=True)
 
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 _model = None
 
 
 def get_model():
     global _model
     if _model is None:
-        print("[whisper] 載入 medium 模型（首次需下載約 1.5GB）...")
-        _model = whisper.load_model("medium")
+        print(f"[whisper] 載入 medium 模型（device: {DEVICE}，首次需下載約 1.5GB）...")
+        _model = whisper.load_model("medium", device=DEVICE)
         print("[whisper] 模型已載入")
     return _model
 
