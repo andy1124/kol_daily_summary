@@ -16,22 +16,22 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       :root {
-        --bg: #0f1117;
-        --surface: #1a1d27;
-        --surface2: #252838;
-        --border: #2e3248;
-        --accent: #6366f1;
-        --accent2: #818cf8;
-        --text: #e2e8f0;
-        --text-muted: #94a3b8;
-        --green: #22c55e;
-        --red: #ef4444;
-        --yellow: #f59e0b;
+        --bg: #f4f6fb;
+        --surface: #ffffff;
+        --surface2: #edf0f7;
+        --border: #dde2ee;
+        --accent: #4f46e5;
+        --accent2: #6366f1;
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --green: #15803d;
+        --red: #dc2626;
+        --yellow: #b45309;
         --radius: 12px;
       }
       body {
         margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
         background: var(--bg);
         color: var(--text);
         line-height: 1.6;
@@ -41,20 +41,21 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       nav {
         background: var(--surface);
         border-bottom: 1px solid var(--border);
+        box-shadow: 0 1px 4px rgba(15,23,42,0.06);
         padding: 0 1.5rem;
         display: flex;
         align-items: center;
         gap: 2rem;
-        height: 56px;
+        height: 58px;
         position: sticky;
         top: 0;
         z-index: 100;
       }
       nav .logo {
-        font-weight: 700;
-        font-size: 1.1rem;
+        font-weight: 800;
+        font-size: 1.15rem;
         color: var(--text);
-        letter-spacing: -0.02em;
+        letter-spacing: -0.03em;
       }
       nav .logo span { color: var(--accent); }
       nav .links { display: flex; gap: 1.5rem; }
@@ -64,11 +65,11 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         font-weight: 500;
         transition: color 0.15s;
       }
-      nav .links a:hover, nav .links a.active { color: var(--text); text-decoration: none; }
+      nav .links a:hover, nav .links a.active { color: var(--accent); text-decoration: none; }
       main {
         max-width: 1100px;
         margin: 0 auto;
-        padding: 2rem 1.5rem;
+        padding: 2.5rem 1.5rem;
       }
       footer {
         text-align: center;
