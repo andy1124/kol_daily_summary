@@ -103,6 +103,7 @@ def check_all(dry_run: bool = False, max_episodes: int = 0) -> list[dict]:
             print(f"[error] {podcast['name']}: {exc}", file=sys.stderr)
             continue
 
+        podcast_new = []
         for entry in feed.entries:
             ep = parse_episode(entry, podcast)
             if ep["id"] in processed:
@@ -111,12 +112,13 @@ def check_all(dry_run: bool = False, max_episodes: int = 0) -> list[dict]:
                 print(f"  [skip] {ep['title']}: 無音訊連結")
                 continue
             print(f"  [new] {ep['title']} ({ep['published_at'][:10]})")
-            new_episodes.append(ep)
-            if max_episodes and len(new_episodes) >= max_episodes:
-                break
+            podcast_new.append(ep)
 
-        if max_episodes and len(new_episodes) >= max_episodes:
-            break
+        new_episodes.extend(podcast_new)
+
+    new_episodes.sort(key=lambda e: e["published_at"], reverse=True)
+    if max_episodes:
+        new_episodes = new_episodes[:max_episodes]
 
     if not dry_run:
         for ep in new_episodes:
