@@ -144,3 +144,20 @@ export function getEpisodesGroupedByDate(): DateGroup[] {
       return { date, label, episodes: eps };
     });
 }
+
+  for (const ep of episodes) {
+    const dateKey = ep.published_at.slice(0, 10);
+    if (!groups.has(dateKey)) groups.set(dateKey, []);
+    groups.get(dateKey)!.push(ep);
+  }
+
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, eps]) => ({
+      date,
+      label: new Date(date).toLocaleDateString("zh-TW", { year: "numeric", month: "long", day: "numeric" }),
+      episodes: eps,
+    }));
+}
+    });
+}
