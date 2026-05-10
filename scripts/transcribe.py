@@ -30,11 +30,26 @@ def get_model():
 def download_audio(url: str, dest: Path) -> bool:
     try:
         print(f"  [download] {url[:80]}...")
-        with requests.get(url, stream=True, timeout=60) as r:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        with requests.get(url, stream=True, timeout=60, headers=headers, allow_redirects=True) as r:
             r.raise_for_status()
+            content_type = r.headers.get("Content-Type", "")
+            print(f"  [download] Content-Type: {content_type}")
             with open(dest, "wb") as f:
                 for chunk in r.iter_content(chunk_size=1024 * 1024):
                     f.write(chunk)
+        file_size = dest.stat().st_size
+        print(f"  [download] 檔案大小: {file_size / 1024:.1f} KB")
+        if file_size < 10 * 1024:  # 小於 10KB 幾乎不可能是有效音訊
+            print(f"  [error] 檔案過小，可能不是有效音訊（{file_size} bytes）", file=sys.stderr)
+            dest.unlink(missing_ok=True)
+            return False
+        if "text/html" in content_type:
+            print(f"  [error] 伺服器回傳 HTML 而非音訊，可能需要驗證或 URL 已失效", file=sys.stderr)
+            dest.unlink(missing_ok=True)
+            return False
         return True
     except Exception as exc:
         print(f"  [error] 下載失敗: {exc}", file=sys.stderr)

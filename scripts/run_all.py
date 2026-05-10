@@ -87,10 +87,25 @@ def main():
         print("Step 3: 更新已處理記錄")
         print("=" * 50)
         processed = load_processed()
+        recorded = 0
+        skipped = 0
         for ep in new_episodes:
-            processed.add(ep["id"])
+            # 只記錄已成功取得逐字稿的集數，避免轉錄失敗的集數被永久跳過
+            ep_file = ROOT / "data" / "podcasts" / ep["podcast_slug"] / f"{ep['id']}.json"
+            if ep_file.exists():
+                ep_data = json.loads(ep_file.read_text(encoding="utf-8"))
+                if ep_data.get("transcript"):
+                    processed.add(ep["id"])
+                    recorded += 1
+                else:
+                    print(f"  [skip] 無逐字稿，不記錄為已處理: {ep['title']}")
+                    skipped += 1
+            else:
+                # 若 JSON 檔不存在（dry-run 等情況），仍照舊記錄
+                processed.add(ep["id"])
+                recorded += 1
         save_processed(processed)
-        print(f"已記錄 {len(new_episodes)} 個新集數\n")
+        print(f"已記錄 {recorded} 個集數（{skipped} 個因無逐字稿暫不記錄）\n")
 
     print("完成！")
 
