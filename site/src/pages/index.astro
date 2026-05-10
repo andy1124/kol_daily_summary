@@ -1,118 +1,117 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import EpisodeCard from "../components/EpisodeCard.astro";
-import { getPodcastList, getEpisodesByPodcast } from "../lib/data";
+import { getPodcastList, getAllEpisodes } from "../lib/data";
 
-const podcasts = getPodcastList();
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const podcasts = getPodcastList();
+const allEpisodes = getAllEpisodes();
+const withSummary = allEpisodes.filter((e) => e.hasMarkdown);
+const recentEpisodes = allEpisodes.slice(0, 10);
+const coveragePercent = allEpisodes.length > 0
+  ? Math.round((withSummary.length / allEpisodes.length) * 100)
+  : 0;
 ---
-<Layout title="財經精選">
-  {podcasts.length === 0 ? (
-    <div class="empty">
-      <p>尚無資料。請先執行 <code>python scripts/run_all.py</code> 取得 Podcast 資料。</p>
+<Layout title="首頁">
+  <div class="hero">
+    <div class="hero-badge">AI 自動化工作流</div>
+    <h1 class="hero-title">財經 KOL 重點<br /><span>一鍵掌握</span></h1>
+    <p class="hero-desc">自動追蹤財經 Podcast · Whisper 語音轉文字 · Claude AI 生成重點筆記<br />每日更新，讓你不錯過任何市場洞察</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num">{podcasts.length}</div>
+      <div class="stat-label">追蹤頻道</div>
     </div>
-  ) : (
-    <div class="channels">
-      {podcasts.map((podcast) => {
-        const episodes = getEpisodesByPodcast(podcast.slug);
-        return (
-          <section class="channel-section">
-            <div class="channel-header">
-              <div class="channel-title-row">
-                {podcast.coverImage && (
-                  <img class="channel-cover" src={podcast.coverImage} alt={podcast.name} />
-                )}
-                <div>
-                  <h2 class="channel-name">{podcast.name}</h2>
-                  <span class="channel-count">{episodes.length} 集</span>
-                </div>
-              </div>
-              <a href={`${base}/podcasts/${podcast.slug}/`} class="view-all">查看全部 →</a>
-            </div>
-            <div class="episode-list">
-              {episodes.map((ep) => (
-                <EpisodeCard
-                  id={ep.id}
-                  podcastName={ep.podcast_name}
-                  podcastSlug={ep.podcast_slug}
-                  title={ep.title}
-                  publishedAt={ep.published_at}
-                  durationSeconds={ep.duration_seconds}
-                  coverImage={ep.cover_image}
-                  hasMarkdown={ep.hasMarkdown}
-                />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+    <div class="stat-card">
+      <div class="stat-num">{allEpisodes.length}</div>
+      <div class="stat-label">已收錄集數</div>
     </div>
+    <div class="stat-card">
+      <div class="stat-num">{withSummary.length}</div>
+      <div class="stat-label">AI 摘要完成</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{coveragePercent}%</div>
+      <div class="stat-label">摘要覆蓋率</div>
+    </div>
+  </div>
+
+  <section class="section">
+    <h2 class="section-title">運作方式</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-name">RSS 自動追蹤</div><div class="step-desc">每日掃描各 KOL 的 Podcast RSS feed，自動偵測新集數並下載音訊</div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-name">Whisper 語音轉錄</div><div class="step-desc">本地執行 OpenAI Whisper 模型，將音訊轉成中文逐字稿，準確率約 90-95%</div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-name">Claude AI 整理筆記</div><div class="step-desc">Claude 分析逐字稿，產出結構化的財經重點、提及股票、市場情緒摘要</div></div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">追蹤頻道</h2>
+    {podcasts.length === 0 && (
+      <div class="empty-state"><p>尚無資料。請先執行 <code>python scripts/run_all.py</code> 取得資料。</p></div>
+    )}
+    {podcasts.length !== 0 && (
+      <div class="kol-list">
+        {podcasts.map((p) => (
+          <a href={`${base}/podcasts/${p.slug}/`} class="kol-card">
+            <div class="kol-cover">
+              {p.coverImage && <img src={p.coverImage} alt={p.name} loading="lazy" />}
+              {!p.coverImage && <div class="kol-placeholder">{p.name.charAt(0)}</div>}
+            </div>
+            <div class="kol-info">
+              <div class="kol-name">{p.name}</div>
+              <div class="kol-meta">{p.episodeCount} 集收錄</div>
+            </div>
+            <div class="kol-arrow">→</div>
+          </a>
+        ))}
+      </div>
+    )}
+  </section>
+
+  {recentEpisodes.length !== 0 && (
+    <section class="section">
+      <h2 class="section-title">近期集數</h2>
+      <div class="episode-list">
+        {recentEpisodes.map((ep) => (
+          <EpisodeCard id={ep.id} podcastName={ep.podcast_name} podcastSlug={ep.podcast_slug} title={ep.title} publishedAt={ep.published_at} durationSeconds={ep.duration_seconds} coverImage={ep.cover_image} hasMarkdown={ep.hasMarkdown} />
+        ))}
+      </div>
+    </section>
   )}
 </Layout>
-
 <style>
-  .channels { display: flex; flex-direction: column; gap: 2.5rem; }
-  .channel-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    box-shadow: 0 1px 4px rgba(15,23,42,0.05);
-  }
-  .channel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.1rem;
-    padding-bottom: 0.9rem;
-    border-bottom: 2px solid var(--border);
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .channel-title-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  .channel-cover {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    object-fit: cover;
-    flex-shrink: 0;
-  }
-  .channel-name {
-    font-size: 1.1rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    margin: 0 0 0.1rem;
-    color: var(--text);
-  }
-  .channel-count {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-  }
-  .view-all {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--accent2);
-    white-space: nowrap;
-  }
-  .view-all:hover { text-decoration: underline; }
-  .episode-list { display: flex; flex-direction: column; gap: 0.55rem; }
-  .empty {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 3rem;
-    text-align: center;
-    color: var(--text-muted);
-  }
-  .empty code {
-    background: var(--surface2);
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-family: monospace;
-    color: var(--accent2);
-  }
+  .hero { text-align: center; padding: 2rem 0 2.5rem; margin-bottom: 2rem; }
+  .hero-badge { display: inline-block; font-size: 0.73rem; font-weight: 600; color: var(--accent2); background: var(--accent-dim); border: 1px solid rgba(79,142,247,0.25); padding: 0.3rem 0.85rem; border-radius: 999px; margin-bottom: 1.25rem; }
+  .hero-title { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 900; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 1rem; color: var(--text); }
+  .hero-title span { color: var(--accent); }
+  .hero-desc { font-size: 0.88rem; color: var(--text-muted); line-height: 1.85; max-width: 480px; margin: 0 auto; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem; margin-bottom: 2.5rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem 1rem; text-align: center; }
+  .stat-num { font-size: 1.9rem; font-weight: 900; color: var(--accent); letter-spacing: -0.04em; line-height: 1; margin-bottom: 0.4rem; }
+  .stat-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+  @media (max-width: 580px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .section { margin-bottom: 2.5rem; }
+  .section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border); }
+  .steps { display: flex; flex-direction: column; }
+  .step { display: flex; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+  .step:last-child { border-bottom: none; }
+  .step-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(79,142,247,0.3); color: var(--accent2); font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 3px; }
+  .step-name { font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; }
+  .step-desc { font-size: 0.81rem; color: var(--text-muted); line-height: 1.65; }
+  .kol-list { display: flex; flex-direction: column; gap: 0.65rem; }
+  .kol-card { display: flex; align-items: center; gap: 0.9rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1.1rem; text-decoration: none; color: var(--text); transition: border-color 0.13s, background 0.13s; }
+  .kol-card:hover { border-color: var(--accent); background: var(--surface2); text-decoration: none; }
+  .kol-cover { width: 48px; height: 48px; border-radius: 10px; overflow: hidden; flex-shrink: 0; background: var(--surface2); }
+  .kol-cover img { width: 100%; height: 100%; object-fit: cover; }
+  .kol-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+  .kol-info { flex: 1; }
+  .kol-name { font-size: 0.92rem; font-weight: 700; color: var(--text); }
+  .kol-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
+  .kol-arrow { color: var(--text-muted); font-size: 0.95rem; }
+  .episode-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  .empty-state { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem; text-align: center; color: var(--text-muted); font-size: 0.88rem; }
+  .empty-state code { background: var(--surface2); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: monospace; color: var(--accent2); }
 </style>

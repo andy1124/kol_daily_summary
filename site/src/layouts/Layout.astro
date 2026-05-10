@@ -1,99 +1,100 @@
 ---
-interface Props {
-  title: string;
-  description?: string;
-}
+import { getPodcastList } from "../lib/data";
+interface Props { title: string; description?: string; }
 const { title, description = "每日財經 Podcast & KOL 重點彙整" } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const podcasts = getPodcastList();
+const pathname = Astro.url.pathname;
+const isHome = pathname === base + "/" || pathname === base || pathname === "/";
+function isPodcastActive(slug: string) { return pathname.includes(`/podcasts/${slug}`); }
 ---
 <!doctype html>
 <html lang="zh-TW">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={description} />
-    <title>{title} | 財經每日精選</title>
-    <style>
-      *, *::before, *::after { box-sizing: border-box; }
-      :root {
-        --bg: #f4f6fb;
-        --surface: #ffffff;
-        --surface2: #edf0f7;
-        --border: #dde2ee;
-        --accent: #4f46e5;
-        --accent2: #6366f1;
-        --text: #0f172a;
-        --text-muted: #64748b;
-        --green: #15803d;
-        --red: #dc2626;
-        --yellow: #b45309;
-        --radius: 12px;
-      }
-      body {
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        line-height: 1.6;
-      }
-      a { color: var(--accent2); text-decoration: none; }
-      a:hover { text-decoration: underline; }
-      nav {
-        background: var(--surface);
-        border-bottom: 1px solid var(--border);
-        box-shadow: 0 1px 4px rgba(15,23,42,0.06);
-        padding: 0 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        height: 58px;
-        position: sticky;
-        top: 0;
-        z-index: 100;
-      }
-      nav .logo {
-        font-weight: 800;
-        font-size: 1.15rem;
-        color: var(--text);
-        letter-spacing: -0.03em;
-      }
-      nav .logo span { color: var(--accent); }
-      nav .links { display: flex; gap: 1.5rem; }
-      nav .links a {
-        color: var(--text-muted);
-        font-size: 0.9rem;
-        font-weight: 500;
-        transition: color 0.15s;
-      }
-      nav .links a:hover, nav .links a.active { color: var(--accent); text-decoration: none; }
-      main {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 2.5rem 1.5rem;
-      }
-      footer {
-        text-align: center;
-        padding: 2rem;
-        color: var(--text-muted);
-        font-size: 0.8rem;
-        border-top: 1px solid var(--border);
-        margin-top: 4rem;
-      }
-    </style>
-  </head>
-  <body>
-    <nav>
-      <a href={`${base}/`} class="logo">財經<span>精選</span></a>
-      <div class="links">
-        <a href={`${base}/`}>每日精選</a>
-        <a href={`${base}/podcasts/`}>Podcasts</a>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content={description} />
+  <title>{title} · KOL Daily</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0b0f1a;--sidebar-bg:#0e1420;--surface:#141b2d;--surface2:#1a2238;--border:#1e2d45;--accent:#4f8ef7;--accent-dim:rgba(79,142,247,0.14);--accent2:#7eb3ff;--text:#dde6f5;--text-muted:#6b7fa3;--text-dim:#8899b8;--green:#34d399;--green-bg:rgba(52,211,153,0.12);--yellow:#fbbf24;--sidebar-w:228px;--radius:10px;--header-h:54px}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+    a{color:var(--accent2);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:var(--sidebar-w);background:var(--sidebar-bg);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:200;overflow-y:auto;transition:transform 0.25s ease}
+    .sidebar-logo{padding:1.3rem 1rem 1rem;border-bottom:1px solid var(--border);flex-shrink:0}
+    .sidebar-logo a{text-decoration:none;display:block}
+    .logo-main{font-size:1.1rem;font-weight:900;color:var(--text);letter-spacing:-0.04em;line-height:1.2}
+    .logo-main span{color:var(--accent)}
+    .logo-sub{font-size:0.67rem;color:var(--text-muted);margin-top:0.25rem}
+    .sidebar-nav{padding:0.65rem 0.5rem;flex:1}
+    .nav-label{font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);padding:0.7rem 0.75rem 0.3rem;display:block}
+    .nav-item{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem;border-radius:8px;color:var(--text-dim);font-size:0.86rem;font-weight:500;text-decoration:none;transition:background 0.13s,color 0.13s;margin-bottom:1px}
+    .nav-item:hover{background:var(--surface2);color:var(--text);text-decoration:none}
+    .nav-item.active{background:var(--accent-dim);color:var(--accent2);font-weight:600}
+    .nav-icon{width:18px;font-size:0.78rem;flex-shrink:0;opacity:0.7;text-align:center}
+    .nav-item.active .nav-icon{opacity:1}
+    .nav-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .ep-count{margin-left:auto;font-size:0.68rem;background:var(--surface2);color:var(--text-muted);padding:0.1rem 0.4rem;border-radius:999px;flex-shrink:0}
+    .nav-item.active .ep-count{background:rgba(79,142,247,0.2);color:var(--accent2)}
+    .sidebar-footer{padding:0.9rem 1rem;border-top:1px solid var(--border);font-size:0.67rem;color:var(--text-muted);line-height:1.6;flex-shrink:0}
+    .mobile-header{display:none;position:fixed;top:0;left:0;right:0;height:var(--header-h);background:var(--sidebar-bg);border-bottom:1px solid var(--border);align-items:center;padding:0 1rem;gap:0.75rem;z-index:100}
+    .hamburger{background:none;border:none;color:var(--text);cursor:pointer;padding:0.4rem;display:flex;flex-direction:column;gap:4px}
+    .hamburger span{display:block;width:20px;height:2px;background:currentColor;border-radius:2px}
+    .mobile-logo{font-size:1rem;font-weight:900;color:var(--text);letter-spacing:-0.04em}
+    .mobile-logo span{color:var(--accent)}
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:150;opacity:0;transition:opacity 0.25s}
+    .overlay.visible{opacity:1}
+    .main-wrap{margin-left:var(--sidebar-w);flex:1;min-width:0;display:flex;flex-direction:column}
+    main{flex:1;max-width:880px;width:100%;margin:0 auto;padding:2.5rem 2rem}
+    footer{padding:1.25rem 2rem;text-align:center;color:var(--text-muted);font-size:0.72rem;border-top:1px solid var(--border);line-height:1.8}
+    @media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.overlay{display:block}.mobile-header{display:flex}.main-wrap{margin-left:0;padding-top:var(--header-h)}main{padding:1.5rem 1rem}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href={`${base}/`}>
+        <div class="logo-main">KOL <span>Daily</span></div>
+        <div class="logo-sub">財經 Podcast 自動摘要</div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-label">導航</span>
+      <a href={`${base}/`} class={isHome ? "nav-item active" : "nav-item"}>
+        <span class="nav-icon">⌂</span><span class="nav-name">首頁</span>
+      </a>
+      <span class="nav-label" style="margin-top:0.5rem">KOL 頻道</span>
+      {podcasts.map((p) => (
+        <a href={`${base}/podcasts/${p.slug}/`} class={isPodcastActive(p.slug) ? "nav-item active" : "nav-item"}>
+          <span class="nav-icon">▶</span>
+          <span class="nav-name">{p.name}</span>
+          <span class="ep-count">{p.episodeCount}</span>
+        </a>
+      ))}
     </nav>
-    <main>
-      <slot />
-    </main>
-    <footer>
-      每日自動更新 · 資料來源：各 Podcast RSS Feed · 摘要由 Claude AI 生成
-    </footer>
-  </body>
+    <div class="sidebar-footer">每日自動更新<br />Whisper 轉錄 · Claude AI 摘要</div>
+  </aside>
+  <div class="overlay" id="overlay"></div>
+  <div class="mobile-header">
+    <button class="hamburger" id="hamburger" aria-label="開啟選單">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="mobile-logo">KOL <span>Daily</span></span>
+  </div>
+  <div class="main-wrap">
+    <main><slot /></main>
+    <footer>每日自動更新 &nbsp;·&nbsp; 資料來源：各 Podcast RSS Feed &nbsp;·&nbsp; 轉錄：Whisper &nbsp;·&nbsp; 摘要：Claude AI</footer>
+  </div>
+</div>
+<script>
+  const hamburger = document.getElementById("hamburger");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("overlay");
+  hamburger?.addEventListener("click", () => { sidebar?.classList.toggle("open"); overlay?.classList.toggle("visible"); });
+  overlay?.addEventListener("click", () => { sidebar?.classList.remove("open"); overlay?.classList.remove("visible"); });
+</script>
+</body>
 </html>

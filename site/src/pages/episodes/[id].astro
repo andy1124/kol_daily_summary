@@ -2,67 +2,52 @@
 import Layout from "../../layouts/Layout.astro";
 import { getAllEpisodes, getEpisodeById } from "../../lib/data";
 import { marked } from "marked";
-
 export async function getStaticPaths() {
   const episodes = getAllEpisodes();
   return episodes.map((ep) => ({ params: { id: ep.id } }));
 }
-
 const { id } = Astro.params;
 const ep = getEpisodeById(id);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-const date = ep
-  ? new Date(ep.published_at).toLocaleDateString("zh-TW", {
-      year: "numeric", month: "long", day: "numeric",
-    })
-  : "";
+const date = ep ? new Date(ep.published_at).toLocaleDateString("zh-TW", { year:"numeric", month:"long", day:"numeric" }) : "";
 const mins = ep ? Math.round(ep.duration_seconds / 60) : 0;
-
-// Convert markdown to HTML if available
-const markdownHtml = ep?.markdownContent
-  ? marked.parse(ep.markdownContent) as string
-  : null;
+const showDuration = ep ? mins > 0 : false;
+const markdownHtml = ep?.markdownContent ? marked.parse(ep.markdownContent) as string : null;
 ---
 <Layout title={ep?.title ?? "集數"}>
-  {!ep ? (
-    <p>找不到此集數。</p>
-  ) : (
+  {!ep && <p style="color:var(--text-muted)">找不到此集數。</p>}
+  {ep && (
     <div class="episode">
-      <div class="header">
-        <a href={`${base}/podcasts/${ep.podcast_slug}/`} class="back">← {ep.podcast_name}</a>
-        <div class="episode-meta">
-          {ep.cover_image && <img class="cover" src={ep.cover_image} alt={ep.title} />}
-          <div>
-            <h1>{ep.title}</h1>
-            <div class="meta-row">
-              <span>{date}</span>
-              {mins > 0 && <span>{mins} 分鐘</span>}
-              {ep.hasMarkdown && <span class="badge-summary">✦ 已摘要</span>}
-            </div>
+      <a href={`${base}/podcasts/${ep.podcast_slug}/`} class="back-link">← {ep.podcast_name}</a>
+      <div class="ep-header">
+        {ep.cover_image && <img class="cover" src={ep.cover_image} alt={ep.title} />}
+        <div class="ep-header-body">
+          <h1 class="ep-title">{ep.title}</h1>
+          <div class="ep-meta">
+            <span>{date}</span>
+            {showDuration && <span class="sep">·</span>}
+            {showDuration && <span>{mins} 分鐘</span>}
+            {ep.hasMarkdown && <span class="sep">·</span>}
+            {ep.hasMarkdown && <span class="badge-summary">✦ 已摘要</span>}
           </div>
         </div>
       </div>
-
-      {markdownHtml ? (
+      {markdownHtml && (
         <section class="section">
-          <h2 class="section-label">AI 重點摘要</h2>
+          <div class="section-label">AI 重點摘要</div>
           <div class="markdown-body" set:html={markdownHtml} />
         </section>
-      ) : (
-        <div class="no-summary">摘要尚未生成。</div>
       )}
-
+      {!markdownHtml && <div class="no-summary">📭 摘要尚未生成</div>}
       {ep.show_notes && (
         <section class="section">
-          <h2 class="section-label">節目描述</h2>
+          <div class="section-label">節目描述</div>
           <div class="show-notes" set:html={ep.show_notes} />
         </section>
       )}
-
       {ep.transcript && (
         <section class="section">
-          <h2 class="section-label">完整逐字稿</h2>
+          <div class="section-label">完整逐字稿</div>
           <details class="transcript-details">
             <summary>展開逐字稿（{ep.transcript.length.toLocaleString()} 字）</summary>
             <div class="transcript">{ep.transcript}</div>
@@ -72,158 +57,35 @@ const markdownHtml = ep?.markdownContent
     </div>
   )}
 </Layout>
-
 <style>
-  .header { margin-bottom: 2rem; }
-  .back { font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 1rem; }
-  .back:hover { color: var(--text); }
-  .episode-meta { display: flex; gap: 1.25rem; align-items: flex-start; }
-  .cover { width: 96px; height: 96px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
-  h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 0.5rem; line-height: 1.3; }
-  .meta-row {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    flex-wrap: wrap;
-  }
-  .badge-summary {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: #15803d;
-    background: #dcfce7;
-    padding: 0.15rem 0.55rem;
-    border-radius: 999px;
-  }
-  .section { margin-top: 2rem; }
-  .section-label {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    margin: 0 0 0.75rem;
-  }
-  .no-summary {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    margin-top: 1.5rem;
-  }
-
-  /* Markdown rendering */
-  .markdown-body {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.75rem 2rem;
-    font-size: 0.93rem;
-    line-height: 1.75;
-    color: var(--text);
-  }
-  .markdown-body :global(h1) {
-    font-size: 1.35rem;
-    font-weight: 800;
-    color: var(--text);
-    margin: 1.5rem 0 0.75rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 2px solid var(--border);
-    letter-spacing: -0.02em;
-  }
-  .markdown-body :global(h1:first-child) { margin-top: 0; }
-  .markdown-body :global(h2) {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--accent2);
-    margin: 1.4rem 0 0.5rem;
-    letter-spacing: -0.01em;
-  }
-  .markdown-body :global(h3) {
-    font-size: 0.93rem;
-    font-weight: 700;
-    color: var(--text);
-    margin: 1.1rem 0 0.4rem;
-  }
-  .markdown-body :global(p) {
-    margin: 0 0 0.75rem;
-    color: var(--text);
-  }
-  .markdown-body :global(ul),
-  .markdown-body :global(ol) {
-    margin: 0.5rem 0 1rem;
-    padding-left: 1.5rem;
-  }
-  .markdown-body :global(li) {
-    margin-bottom: 0.4rem;
-    color: var(--text);
-    line-height: 1.65;
-  }
-  .markdown-body :global(li > ul),
-  .markdown-body :global(li > ol) {
-    margin: 0.35rem 0 0.35rem;
-  }
-  .markdown-body :global(strong) {
-    font-weight: 700;
-    color: var(--text);
-  }
-  .markdown-body :global(blockquote) {
-    border-left: 3px solid var(--accent);
-    margin: 1rem 0;
-    padding: 0.5rem 1rem;
-    background: var(--surface2);
-    border-radius: 0 8px 8px 0;
-    color: var(--text-muted);
-    font-style: italic;
-  }
-  .markdown-body :global(code) {
-    background: var(--surface2);
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 0.875em;
-    color: var(--accent2);
-  }
-  .markdown-body :global(hr) {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 1.5rem 0;
-  }
-
-  .show-notes {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.25rem;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    white-space: pre-wrap;
-    line-height: 1.7;
-  }
-  .transcript-details {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  .transcript-details summary {
-    padding: 1rem 1.25rem;
-    cursor: pointer;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    user-select: none;
-    list-style: none;
-  }
-  .transcript-details summary:hover { color: var(--text); }
-  .transcript {
-    padding: 0 1.25rem 1.25rem;
-    font-size: 0.88rem;
-    line-height: 1.8;
-    color: var(--text-muted);
-    white-space: pre-wrap;
-    max-height: 500px;
-    overflow-y: auto;
-  }
+  .episode{max-width:720px}
+  .back-link{display:inline-block;font-size:0.82rem;color:var(--text-muted);margin-bottom:1.5rem;transition:color 0.13s;text-decoration:none}
+  .back-link:hover{color:var(--text);text-decoration:none}
+  .ep-header{display:flex;gap:1.25rem;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+  .cover{width:88px;height:88px;border-radius:12px;object-fit:cover;flex-shrink:0}
+  .ep-title{font-size:1.45rem;font-weight:900;letter-spacing:-0.03em;color:var(--text);line-height:1.3;margin-bottom:0.6rem}
+  .ep-meta{display:flex;gap:0.45rem;align-items:center;color:var(--text-muted);font-size:0.82rem;flex-wrap:wrap}
+  .sep{opacity:0.35}
+  .badge-summary{font-size:0.7rem;font-weight:700;color:var(--green);background:var(--green-bg);padding:0.12rem 0.5rem;border-radius:999px}
+  .section{margin-top:2rem}
+  .section-label{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:0.75rem}
+  .no-summary{display:flex;align-items:center;gap:0.6rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;color:var(--text-muted);font-size:0.88rem;margin-top:1.5rem}
+  .markdown-body{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem 2rem;font-size:0.92rem;line-height:1.8;color:var(--text)}
+  .markdown-body :global(h1){font-size:1.2rem;font-weight:800;color:var(--text);margin:1.5rem 0 0.6rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border);letter-spacing:-0.02em}
+  .markdown-body :global(h1:first-child){margin-top:0}
+  .markdown-body :global(h2){font-size:1rem;font-weight:700;color:var(--accent2);margin:1.35rem 0 0.45rem}
+  .markdown-body :global(h3){font-size:0.92rem;font-weight:700;color:var(--text);margin:1rem 0 0.35rem}
+  .markdown-body :global(p){margin:0 0 0.75rem}
+  .markdown-body :global(p:last-child){margin-bottom:0}
+  .markdown-body :global(ul),.markdown-body :global(ol){margin:0.4rem 0 0.9rem;padding-left:1.4rem}
+  .markdown-body :global(li){margin-bottom:0.35rem;line-height:1.7}
+  .markdown-body :global(strong){font-weight:700;color:var(--text)}
+  .markdown-body :global(blockquote){border-left:3px solid var(--accent);margin:1rem 0;padding:0.5rem 1rem;background:var(--surface2);border-radius:0 8px 8px 0;color:var(--text-dim);font-style:italic}
+  .markdown-body :global(code){background:var(--surface2);padding:0.12rem 0.38rem;border-radius:4px;font-family:monospace;font-size:0.875em;color:var(--accent2)}
+  .markdown-body :global(hr){border:none;border-top:1px solid var(--border);margin:1.5rem 0}
+  .show-notes{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;font-size:0.88rem;color:var(--text-muted);white-space:pre-wrap;line-height:1.75}
+  .transcript-details{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .transcript-details summary{padding:1rem 1.25rem;cursor:pointer;color:var(--text-muted);font-size:0.85rem;user-select:none;list-style:none;transition:color 0.13s,background 0.13s}
+  .transcript-details summary:hover{color:var(--text);background:var(--surface2)}
+  .transcript{padding:0 1.25rem 1.25rem;font-size:0.86rem;line-height:1.85;color:var(--text-muted);white-space:pre-wrap;max-height:520px;overflow-y:auto;border-top:1px solid var(--border)}
 </style>
