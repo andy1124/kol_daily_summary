@@ -1,0 +1,23 @@
+#!/bin/bash
+# Pre-commit hook: build Astro site and stage docs/ before every commit.
+# Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+echo "🔨 [pre-commit] Building Astro site..."
+cd "$REPO_ROOT/site"
+
+if ! npm run build; then
+  echo "❌ [pre-commit] Build failed — commit aborted."
+  exit 1
+fi
+
+cd "$REPO_ROOT"
+
+echo "📦 [pre-commit] Staging docs/..."
+git add docs/
+
+echo "✅ [pre-commit] Build succeeded — continuing with commit."
+exit 0

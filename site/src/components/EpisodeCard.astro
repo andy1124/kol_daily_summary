@@ -7,12 +7,11 @@ interface Props {
   publishedAt: string;
   durationSeconds: number;
   coverImage?: string;
-  oneLineSummary?: string;
-  marketSentiment?: string;
+  hasMarkdown?: boolean;
 }
 const {
   id, podcastName, podcastSlug, title, publishedAt,
-  durationSeconds, coverImage, oneLineSummary, marketSentiment,
+  durationSeconds, coverImage, hasMarkdown,
 } = Astro.props;
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -20,10 +19,6 @@ const date = new Date(publishedAt).toLocaleDateString("zh-TW", {
   year: "numeric", month: "2-digit", day: "2-digit",
 });
 const mins = Math.round(durationSeconds / 60);
-const sentimentColor: Record<string, string> = {
-  "看多": "green", "看空": "red", "中性": "muted", "混合": "yellow",
-};
-const color = sentimentColor[marketSentiment ?? ""] ?? "muted";
 ---
 <a href={`${base}/episodes/${id}/`} class="episode-card">
   {coverImage && <img class="thumb" src={coverImage} alt={title} loading="lazy" />}
@@ -32,12 +27,12 @@ const color = sentimentColor[marketSentiment ?? ""] ?? "muted";
       <span class="podcast">{podcastName}</span>
       <span class="date">{date}</span>
       {mins > 0 && <span class="dur">{mins} 分鐘</span>}
-      {marketSentiment && (
-        <span class={`sentiment sentiment--${color}`}>{marketSentiment}</span>
-      )}
+      {hasMarkdown
+        ? <span class="badge badge--has">✦ 已摘要</span>
+        : <span class="badge badge--none">摘要尚未產出</span>
+      }
     </div>
     <div class="title">{title}</div>
-    {oneLineSummary && <div class="summary">{oneLineSummary}</div>}
   </div>
 </a>
 
@@ -77,29 +72,20 @@ const color = sentimentColor[marketSentiment ?? ""] ?? "muted";
   }
   .podcast { font-size: 0.78rem; color: var(--accent2); font-weight: 600; }
   .date, .dur { font-size: 0.78rem; color: var(--text-muted); }
-  .sentiment {
-    font-size: 0.72rem;
+  .badge {
+    font-size: 0.7rem;
     font-weight: 700;
     padding: 0.15rem 0.5rem;
     border-radius: 999px;
     letter-spacing: 0.02em;
   }
-  .sentiment--green  { background: #dcfce7; color: var(--green); }
-  .sentiment--red    { background: #fee2e2; color: var(--red); }
-  .sentiment--yellow { background: #fef3c7; color: var(--yellow); }
-  .sentiment--muted  { background: var(--surface2); color: var(--text-muted); }
+  .badge--has  { background: #dcfce7; color: #15803d; }
+  .badge--none { background: var(--surface2); color: var(--text-muted); }
   .title {
     font-weight: 600;
     font-size: 0.95rem;
     color: var(--text);
     margin-bottom: 0.3rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .summary {
-    font-size: 0.85rem;
-    color: var(--text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

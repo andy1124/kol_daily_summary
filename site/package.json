@@ -8,6 +8,8 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "^4.16.18"
+    "astro": "^4.16.18",
+    "marked": "^9.0.0",
+    "shiki": "^4.0.2"
   }
 }

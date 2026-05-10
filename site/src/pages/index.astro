@@ -1,95 +1,105 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import EpisodeCard from "../components/EpisodeCard.astro";
-import FeaturedEpisodeCard from "../components/FeaturedEpisodeCard.astro";
-import { getLatestPerPodcast, getEpisodesGroupedByDate } from "../lib/data";
+import { getPodcastList, getEpisodesByPodcast } from "../lib/data";
 
-const latestPerPodcast = getLatestPerPodcast();
-const dateGroups = getEpisodesGroupedByDate();
+const podcasts = getPodcastList();
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 <Layout title="財經精選">
-  {latestPerPodcast.length === 0 ? (
+  {podcasts.length === 0 ? (
     <div class="empty">
       <p>尚無資料。請先執行 <code>python scripts/run_all.py</code> 取得 Podcast 資料。</p>
     </div>
   ) : (
-    <>
-      <section class="featured-section">
-        <h2 class="section-label">各節目最新一集</h2>
-        <div class="featured-list">
-          {latestPerPodcast.map((ep) => (
-            <FeaturedEpisodeCard episode={ep} />
-          ))}
-        </div>
-      </section>
-
-      {dateGroups.length > 0 && (
-        <section class="history-section">
-          {dateGroups.map((group) => (
-            <div class="date-group">
-              <h2 class="date-header">
-                <span class="date-label">{group.label}</span>
-                <span class="date-count">{group.episodes.length} 集</span>
-              </h2>
-              <div class="episode-list">
-                {group.episodes.map((ep) => (
-                  <EpisodeCard
-                    id={ep.id}
-                    podcastName={ep.podcast_name}
-                    podcastSlug={ep.podcast_slug}
-                    title={ep.title}
-                    publishedAt={ep.published_at}
-                    durationSeconds={ep.duration_seconds}
-                    coverImage={ep.cover_image}
-                    oneLineSummary={ep.summary?.one_line_summary}
-                    marketSentiment={ep.summary?.market_sentiment}
-                  />
-                ))}
+    <div class="channels">
+      {podcasts.map((podcast) => {
+        const episodes = getEpisodesByPodcast(podcast.slug);
+        return (
+          <section class="channel-section">
+            <div class="channel-header">
+              <div class="channel-title-row">
+                {podcast.coverImage && (
+                  <img class="channel-cover" src={podcast.coverImage} alt={podcast.name} />
+                )}
+                <div>
+                  <h2 class="channel-name">{podcast.name}</h2>
+                  <span class="channel-count">{episodes.length} 集</span>
+                </div>
               </div>
+              <a href={`${base}/podcasts/${podcast.slug}/`} class="view-all">查看全部 →</a>
             </div>
-          ))}
-        </section>
-      )}
-    </>
+            <div class="episode-list">
+              {episodes.map((ep) => (
+                <EpisodeCard
+                  id={ep.id}
+                  podcastName={ep.podcast_name}
+                  podcastSlug={ep.podcast_slug}
+                  title={ep.title}
+                  publishedAt={ep.published_at}
+                  durationSeconds={ep.duration_seconds}
+                  coverImage={ep.cover_image}
+                  hasMarkdown={ep.hasMarkdown}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
   )}
 </Layout>
 
 <style>
-  .featured-section { margin-bottom: 3rem; }
-  .section-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-    margin: 0 0 1rem;
+  .channels { display: flex; flex-direction: column; gap: 2.5rem; }
+  .channel-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.05);
   }
-  .featured-list {
+  .channel-header {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  .history-section { margin-top: 1rem; }
-  .date-group { margin-bottom: 2.25rem; }
-  .date-header {
-    display: flex;
-    align-items: baseline;
-    gap: 0.6rem;
-    margin: 0 0 0.9rem;
-    padding-bottom: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.9rem;
     border-bottom: 2px solid var(--border);
+    gap: 1rem;
+    flex-wrap: wrap;
   }
-  .date-label {
-    font-size: 1.3rem;
+  .channel-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .channel-cover {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .channel-name {
+    font-size: 1.1rem;
     font-weight: 800;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.1rem;
     color: var(--text);
   }
-  .date-count {
+  .channel-count {
     font-size: 0.78rem;
     color: var(--text-muted);
   }
-  .episode-list { display: flex; flex-direction: column; gap: 0.65rem; }
+  .view-all {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--accent2);
+    white-space: nowrap;
+  }
+  .view-all:hover { text-decoration: underline; }
+  .episode-list { display: flex; flex-direction: column; gap: 0.55rem; }
   .empty {
     background: var(--surface);
     border: 1px solid var(--border);

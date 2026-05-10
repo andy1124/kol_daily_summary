@@ -21,6 +21,8 @@ export interface Episode {
   show_notes: string;
   transcript: string;
   summary: EpisodeSummary | null;
+  markdownContent?: string;
+  hasMarkdown?: boolean;
 }
 
 export interface PodcastMeta {
@@ -41,6 +43,14 @@ function readJson<T>(path: string): T | null {
   }
 }
 
+function readMarkdown(path: string): string | null {
+  try {
+    return readFileSync(path, "utf-8");
+  } catch {
+    return null;
+  }
+}
+
 export function getAllEpisodes(): Episode[] {
   const podcastsDir = join(DATA_DIR, "podcasts");
   if (!existsSync(podcastsDir)) return [];
@@ -51,7 +61,13 @@ export function getAllEpisodes(): Episode[] {
     for (const file of readdirSync(slugDir)) {
       if (!file.endsWith(".json")) continue;
       const ep = readJson<Episode>(join(slugDir, file));
-      if (ep) episodes.push(ep);
+      if (!ep) continue;
+      // Check for companion markdown file
+      const mdPath = join(slugDir, file.replace(/\.json$/, ".md"));
+      const md = readMarkdown(mdPath);
+      ep.markdownContent = md ?? undefined;
+      ep.hasMarkdown = md !== null;
+      episodes.push(ep);
     }
   }
   return episodes.sort(

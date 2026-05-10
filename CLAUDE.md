@@ -40,26 +40,37 @@ kol_daily_summary/
 # 啟動虛擬環境
 venv\Scripts\Activate.ps1
 
-# 執行 RSS 檢查 → 轉錄 → 摘要（每次最多 5 集）
+# 執行 RSS 檢查 → 轉錄 → 摘要，再建置網站並推送
 python scripts/run_all.py --max-episodes 5
-
-# 重新建置靜態網站
 cd site && npm run build && cd ..
-
-# 推送資料到 GitHub（GitHub Pages 自動更新）
 git add data/ && git commit -m "Daily update: $(Get-Date -Format 'yyyy-MM-dd')" && git push
 ```
 
-### 只查看待處理項目（不實際執行）
+### 兩種下載模式（二擇一）
+
+**模式一：日期區間** — 每個 Podcast 下載從指定日期（含）到今天的所有新集數
 
 ```powershell
-python scripts/run_all.py --dry-run
+python scripts/run_all.py --since 2026-05-01
 ```
 
-### 跳過轉錄（只更新摘要）
+**模式二：最新 N 集** — 每個 Podcast **各自**取最新 N 集（預設 5）
 
 ```powershell
-python scripts/run_all.py --skip-transcribe
+python scripts/run_all.py --max-episodes 5
+```
+
+兩種模式都會自動跳過已在 `processed.json` 中記錄過的集數，不會重複處理。
+
+### 其他常用參數
+
+```powershell
+# 只顯示待處理項目，不實際執行（可搭配任一模式）
+python scripts/run_all.py --since 2026-05-01 --dry-run
+python scripts/run_all.py --max-episodes 5 --dry-run
+
+# 跳過 Whisper 轉錄（只做 RSS 檢查與記錄）
+python scripts/run_all.py --max-episodes 5 --skip-transcribe
 ```
 
 ## 新增 Podcast 來源
@@ -112,7 +123,7 @@ export default defineConfig({
 
 ## 技術說明
 
-- **轉錄模型**：Whisper `medium`（中文辨識準確度約 90-95%）
+- **轉錄模型**：Whisper `small`（中文辨識準確度約 90-95%）
 - **摘要模型**：Claude Haiku（低成本，使用 prompt caching 節省 token）
 - **前端**：Astro 4.x 靜態網站，深色主題
 - **資料格式**：每集一個 JSON 檔，含元數據、逐字稿、摘要

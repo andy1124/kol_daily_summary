@@ -85,10 +85,31 @@ def parse_episode(entry, podcast: dict) -> dict:
     }
 
 
-def check_all(dry_run: bool = False, max_episodes: int = 0) -> list[dict]:
+def check_all(
+    dry_run: bool = False,
+    max_episodes: int = 0,
+    since_date: str = "",
+) -> list[dict]:
+    """
+    收集各 Podcast 的新集數（未處理過的）。
+
+    模式一（since_date）：每個 Podcast 取 since_date 當天（含）到現在的所有集數。
+    模式二（max_episodes）：每個 Podcast 各自取最新的 max_episodes 集。
+    兩種模式皆跳過已在 processed.json 中的集數。
+    """
     sources = yaml.safe_load(CONFIG_FILE.read_text(encoding="utf-8"))
     processed = load_processed()
     new_episodes = []
+
+    # 解析起始日期（UTC 00:00:00）
+    since_dt = None
+    if since_date:
+        since_dt = datetime.fromisoformat(since_date).replace(
+            hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc
+        )
+        print(f"[模式] 日期區間：{since_date} 至今")
+    elif max_episodes:
+        print(f"[模式] 每個 Podcast 最新 {max_episodes} 集")
 
     for podcast in sources.get("podcasts", []):
         rss_url = podcast.get("rss_url", "")
@@ -106,19 +127,36 @@ def check_all(dry_run: bool = False, max_episodes: int = 0) -> list[dict]:
         podcast_new = []
         for entry in feed.entries:
             ep = parse_episode(entry, podcast)
+
+            # 跳過已處理過的集數
             if ep["id"] in processed:
                 continue
+
+            # 跳過沒有音訊連結的集數
             if not ep["audio_url"]:
                 print(f"  [skip] {ep['title']}: 無音訊連結")
                 continue
+
+            # 日期模式：過濾發布時間早於 since_dt 的集數
+            if since_dt:
+                ep_dt = datetime.fromisoformat(ep["published_at"])
+                if ep_dt < since_dt:
+                    continue
+
             print(f"  [new] {ep['title']} ({ep['published_at'][:10]})")
             podcast_new.append(ep)
 
+        # 每個 Podcast 內部依發布時間排序（新到舊）
+        podcast_new.sort(key=lambda e: e["published_at"], reverse=True)
+
+        # max_episodes 模式：每個 Podcast 各自截取最新 N 集
+        if max_episodes and not since_dt:
+            podcast_new = podcast_new[:max_episodes]
+
         new_episodes.extend(podcast_new)
 
+    # 全部結果再依時間排序（新到舊）
     new_episodes.sort(key=lambda e: e["published_at"], reverse=True)
-    if max_episodes:
-        new_episodes = new_episodes[:max_episodes]
 
     if not dry_run:
         for ep in new_episodes:
@@ -134,7 +172,9 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--max-episodes", type=int, default=0)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--max-episodes", type=int, default=0, help="每個 Podcast 最新 N 集")
+    group.add_argument("--since", dest="since_date", default="", metavar="YYYY-MM-DD", help="下載該日期至今的所有集數")
     args = parser.parse_args()
-    episodes = check_all(dry_run=args.dry_run, max_episodes=args.max_episodes)
+    episodes = check_all(dry_run=args.dry_run, max_episodes=args.max_episodes, since_date=args.since_date)
     print(f"\n找到 {len(episodes)} 個新集數")

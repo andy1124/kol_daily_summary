@@ -22,17 +22,49 @@ def save_processed(processed: set[str]) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="每日 Podcast 更新流程")
+    parser = argparse.ArgumentParser(
+        description="每日 Podcast 更新流程",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+使用方式（兩種模式二擇一）：
+  --since YYYY-MM-DD   下載每個 Podcast 從該日期到今天的所有新集數
+  --max-episodes N     下載每個 Podcast 最新的 N 集（預設 5）
+
+範例：
+  python run_all.py --since 2026-05-01
+  python run_all.py --max-episodes 3
+  python run_all.py --since 2026-05-01 --dry-run
+        """,
+    )
     parser.add_argument("--dry-run", action="store_true", help="只顯示待處理項目，不實際執行")
-    parser.add_argument("--max-episodes", type=int, default=5, help="每次最多處理集數（0=不限）")
     parser.add_argument("--skip-transcribe", action="store_true", help="跳過 Whisper 轉錄")
+
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--since",
+        dest="since_date",
+        default="",
+        metavar="YYYY-MM-DD",
+        help="下載每個 Podcast 從指定日期（含）至今的所有未處理集數",
+    )
+    mode.add_argument(
+        "--max-episodes",
+        type=int,
+        default=5,
+        metavar="N",
+        help="每個 Podcast 各自取最新 N 集（預設 5，0=不限）",
+    )
     args = parser.parse_args()
 
     print("=" * 50)
     print("Step 1: 檢查 RSS 新集數")
     print("=" * 50)
     from scripts.check_podcasts import check_all
-    new_episodes = check_all(dry_run=args.dry_run, max_episodes=args.max_episodes)
+    new_episodes = check_all(
+        dry_run=args.dry_run,
+        max_episodes=args.max_episodes,
+        since_date=args.since_date,
+    )
     print(f"找到 {len(new_episodes)} 個新集數\n")
 
     if not new_episodes:
