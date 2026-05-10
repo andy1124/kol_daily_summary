@@ -35,6 +35,8 @@ export interface PodcastMeta {
 
 const DATA_DIR = resolve(join(import.meta.dirname ?? "", "../../../data"));
 
+let _cache: Episode[] | null = null;
+
 function readJson<T>(path: string): T | null {
   try {
     return JSON.parse(readFileSync(path, "utf-8")) as T;
@@ -52,6 +54,8 @@ function readMarkdown(path: string): string | null {
 }
 
 export function getAllEpisodes(): Episode[] {
+  if (_cache) return _cache;
+
   const podcastsDir = join(DATA_DIR, "podcasts");
   if (!existsSync(podcastsDir)) return [];
 
@@ -70,9 +74,10 @@ export function getAllEpisodes(): Episode[] {
       episodes.push(ep);
     }
   }
-  return episodes.sort(
+  _cache = episodes.sort(
     (a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
   );
+  return _cache;
 }
 
 export function getEpisodeById(id: string): Episode | null {

@@ -48,15 +48,37 @@ const markdownHtml = ep?.markdownContent ? marked.parse(ep.markdownContent) as s
       {ep.transcript && (
         <section class="section">
           <div class="section-label">完整逐字稿</div>
-          <details class="transcript-details">
+          <details class="transcript-details" id="transcript-details">
             <summary>展開逐字稿（{ep.transcript.length.toLocaleString()} 字）</summary>
-            <div class="transcript">{ep.transcript}</div>
+            <div class="transcript" id="transcript-body">載入中…</div>
           </details>
         </section>
       )}
     </div>
   )}
 </Layout>
+
+{ep?.transcript && (
+  <script define:vars={{ episodeId: ep.id, base }}>
+    const details = document.getElementById("transcript-details");
+    if (details) {
+      let loaded = false;
+      details.addEventListener("toggle", async () => {
+        if (!details.open || loaded) return;
+        loaded = true;
+        const body = document.getElementById("transcript-body");
+        try {
+          const res = await fetch(`${base}/data/transcripts/${episodeId}.json`);
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          body.textContent = data.transcript ?? "（無逐字稿）";
+        } catch {
+          body.textContent = "載入失敗，請重新整理頁面。";
+        }
+      });
+    }
+  </script>
+)}
 <style>
   .episode{max-width:720px}
   .back-link{display:inline-block;font-size:0.82rem;color:var(--text-muted);margin-bottom:1.5rem;transition:color 0.13s;text-decoration:none}
