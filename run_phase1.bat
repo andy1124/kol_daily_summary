@@ -29,7 +29,6 @@ if errorlevel 1 (
     echo [END] %time% >> "%LOGFILE%"
     echo. >> "%LOGFILE%"
     echo Failed. See %LOGFILE%
-    pause
     exit /b 1
 )
 
@@ -75,6 +74,5 @@ echo. >> "%LOGFILE%"
 echo.
 echo Done. Log: %LOGFILE%
 echo.
-pause
 
 exit /b %EXIT_CODE%

@@ -1,0 +1,9 @@
+# 統一所有文字檔以 LF 儲存，避免 Windows(CRLF) 和 Linux(LF) 造成假性 modified
+* text=auto eol=lf
+
+# 明確指定關鍵檔案
+*.json text eol=lf
+*.md   text eol=lf
+*.yaml text eol=lf
+*.py   text eol=lf
+*.bat  text eol=crlf
