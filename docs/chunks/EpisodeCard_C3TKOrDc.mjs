@@ -26,6 +26,6 @@ const $$EpisodeCard = createComponent(($$result, $$props, $$slots) => {
   });
   const mins = Math.round(durationSeconds / 60);
   return renderTemplate`${maybeRenderHead()}<a${addAttribute(`${base}/episodes/${id}/`, "href")} class="episode-card" data-astro-cid-7apkpmh7> ${!hidePodcast && coverImage && renderTemplate`<img class="thumb"${addAttribute(coverImage, "src")}${addAttribute(title, "alt")} loading="lazy" data-astro-cid-7apkpmh7>`} <div class="body" data-astro-cid-7apkpmh7> <div class="meta" data-astro-cid-7apkpmh7> ${!hidePodcast && renderTemplate`<span class="podcast" data-astro-cid-7apkpmh7>${podcastName}</span>`} <span class="date" data-astro-cid-7apkpmh7>${date}</span> ${mins > 0 && renderTemplate`<span class="dur" data-astro-cid-7apkpmh7>${mins} 分</span>`} ${hasMarkdown ? renderTemplate`<span class="badge badge--has" data-astro-cid-7apkpmh7>✦ 已摘要</span>` : renderTemplate`<span class="badge badge--none" data-astro-cid-7apkpmh7>待摘要</span>`} </div> <div class="title" data-astro-cid-7apkpmh7>${title}</div> </div> </a> `;
-}, "/sessions/youthful-intelligent-ramanujan/mnt/kol_daily_summary/site/src/components/EpisodeCard.astro", void 0);
+}, "/sessions/eloquent-gallant-ride/mnt/kol_daily_summary/site/src/components/EpisodeCard.astro", void 0);
 
 export { $$EpisodeCard as $ };
